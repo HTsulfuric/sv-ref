@@ -1,0 +1,41 @@
+[project]
+name = "sv-ref"
+version = "0.3.0b1"
+description = "SystemVerilog packed struct/enum type definitions to JSON/HTML refbook generator"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+keywords = ["systemverilog", "waveform", "debugging", "struct", "enum", "pyslang"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+dependencies = [
+    "jinja2>=3.1.6",
+    "pydantic>=2.12.5",
+    "pyslang>=10.0.0",
+    "typer>=0.21.1",
+]
+
+[project.urls]
+Repository = "https://github.com/HTsulfuric/sv-ref"
+
+[project.scripts]
+sv-ref = "sv_ref.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.0",
+    "syrupy>=5.1.0",
+]

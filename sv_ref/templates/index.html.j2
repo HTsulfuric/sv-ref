@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sv-ref Hex Decoder</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Dark theme (default - Catppuccin Mocha) */
+:root, :root[data-theme="dark"] {
+  --bg: #1e1e2e;
+  --surface: #282840;
+  --surface2: #313148;
+  --border: #44446a;
+  --text: #cdd6f4;
+  --text-dim: #9399b2;
+  --accent: #89b4fa;
+  --accent2: #a6e3a1;
+  --warn: #f9e2af;
+  --error: #f38ba8;
+  --field-colors: #f38ba8, #fab387, #f9e2af, #a6e3a1, #89b4fa, #cba6f7, #f2cdcd, #94e2d5;
+}
+
+/* Light theme (Catppuccin Latte) */
+:root[data-theme="light"] {
+  --bg: #eff1f5;
+  --surface: #e6e9ef;
+  --surface2: #dce0e8;
+  --border: #bcc0cc;
+  --text: #4c4f69;
+  --text-dim: #6c6f85;
+  --accent: #1e66f5;
+  --accent2: #40a02b;
+  --warn: #df8e1d;
+  --error: #d20f39;
+  --field-colors: #d20f39, #fe640b, #df8e1d, #40a02b, #1e66f5, #8839ef, #dc8a78, #179299;
+}
+
+body {
+  font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.sidebar-title small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.theme-toggle {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+
+.theme-toggle:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.sidebar-search {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text-dim); opacity: 0.5; }
+
+.type-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+/* Package groups */
+.pkg-header {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  margin-top: 4px;
+}
+
+.pkg-header:first-child { margin-top: 0; }
+.pkg-header:hover { color: var(--text); }
+
+.pkg-header::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.15s;
+}
+
+.pkg-group:not(.collapsed) .pkg-header::before {
+  transform: rotate(90deg);
+}
+
+.pkg-group.collapsed .type-item { display: none; }
+
+.pkg-count {
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.type-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.type-item:hover { background: var(--surface2); }
+.type-item.active { background: var(--accent); color: var(--bg); }
+
+.type-item.kbd-highlight {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.type-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.type-badge.struct { background: #89b4fa33; color: var(--accent); }
+.type-badge.enum { background: #a6e3a133; color: var(--accent2); }
+.type-item.active .type-badge { background: rgba(0,0,0,0.2); color: inherit; }
+
+.type-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.type-width { font-size: 11px; color: var(--text-dim); }
+.type-item.active .type-width { color: inherit; opacity: 0.7; }
+
+/* Main area */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.toolbar {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar label {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hex-input {
+  font-family: inherit;
+  font-size: 18px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  width: 320px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.hex-input:focus { border-color: var(--accent); }
+
+.hex-input::placeholder { color: var(--text-dim); opacity: 0.5; }
+
+.type-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.type-info {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
+/* Bit field visualization */
+.bitfield-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  table-layout: fixed;
+}
+
+.bitfield-table th {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 400;
+  padding: 2px 0;
+  text-align: center;
+}
+
+.bitfield-table td {
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--bg);
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Decoded fields */
+.fields-section {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(140px, auto) minmax(60px, auto) minmax(80px, auto) 1fr;
+  gap: 4px 12px;
+}
+
+.fields-section h3 {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.field-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  padding: 10px 16px;
+  border-radius: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.field-row:nth-child(odd) { background: var(--surface); }
+.field-row:nth-child(even) { background: var(--surface2); }
+
+.field-label { font-weight: 600; }
+.field-bits { color: var(--text-dim); font-size: 12px; }
+.field-hex { color: var(--accent); word-break: break-all; }
+.field-decoded { color: var(--accent2); word-break: break-all; }
+
+.field-row.nested {
+  margin-left: 24px;
+  opacity: 0.85;
+  font-size: 12px;
+}
+
+.field-row.nested .field-label::before {
+  content: "- ";
+  color: var(--text-dim);
+}
+
+/* Enum members table */
+.enum-section { margin-top: 16px; }
+
+.enum-section h3 {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.enum-row {
+  display: grid;
+  grid-template-columns: 180px 100px 100px;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.enum-row:nth-child(odd) { background: var(--surface); }
+.enum-row:nth-child(even) { background: var(--surface2); }
+
+.enum-name { font-weight: 600; }
+.enum-value { color: var(--accent); }
+.enum-hex { color: var(--text-dim); }
+
+.enum-match { color: var(--accent2); font-weight: 600; }
+
+.error-msg {
+  color: var(--error);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.hex-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  min-width: 48px;
+  text-align: center;
+}
+
+.hex-status.exact { background: #a6e3a133; color: #a6e3a1; }
+.hex-status.padded { background: #f9e2af33; color: #f9e2af; }
+.hex-status.overflow { background: #f38ba833; color: #f38ba8; }
+
+/* Copy to clipboard */
+.copyable {
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 3px;
+  margin: -1px -3px;
+  transition: background 0.15s;
+}
+
+.copyable:hover { background: var(--surface2); }
+
+.copied {
+  background: var(--accent2) !important;
+  color: var(--bg) !important;
+  transition: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-title">
+      sv-ref
+      <small id="meta-info"></small>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">Light</button>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" class="search-input" id="search-input" placeholder="Search types... (/)">
+  </div>
+  <div class="type-list" id="type-list"></div>
+</div>
+
+<div class="main">
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <div>
+      <div class="type-title" id="type-title"></div>
+      <div class="type-info" id="type-info"></div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <label for="hex-input">Hex Value</label>
+      <input type="text" class="hex-input" id="hex-input" placeholder="e.g. DEAD">
+      <span class="hex-status" id="hex-status"></span>
+    </div>
+  </div>
+  <div class="content" id="content">
+    <div class="placeholder">Select a type from the sidebar</div>
+  </div>
+</div>
+
+<script type="application/json" id="refbook-data">
+{{ refbook_json }}
+</script>
+
+<script>
+(function() {
+  "use strict";
+
+  // --- Theme ---
+
+  function initTheme() {
+    var saved = localStorage.getItem("sv-ref-theme") || "dark";
+    document.documentElement.dataset.theme = saved;
+    updateThemeButton();
+  }
+
+  function toggleTheme() {
+    var current = document.documentElement.dataset.theme;
+    var next = current === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem("sv-ref-theme", next);
+    updateThemeButton();
+    FIELD_COLORS = parseFieldColors();
+    decode();
+  }
+
+  window.toggleTheme = toggleTheme;
+
+  function updateThemeButton() {
+    var btn = document.getElementById("theme-toggle");
+    btn.textContent = document.documentElement.dataset.theme === "dark" ? "Light" : "Dark";
+  }
+
+  function parseFieldColors() {
+    var raw = getComputedStyle(document.documentElement).getPropertyValue("--field-colors").trim();
+    return raw.split(",").map(function(c) { return c.trim(); });
+  }
+
+  initTheme();
+
+  // --- Helpers ---
+
+  var FIELD_COLORS = parseFieldColors();
+
+  function binToBigInt(b) { return BigInt("0b" + b); }
+  function bigIntToHex(val, hexLen) {
+    var h = val.toString(16).toUpperCase();
+    while (h.length < hexLen) h = "0" + h;
+    return "0x" + h;
+  }
+
+  function escAttr(s) {
+    return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  }
+
+  // --- Data ---
+
+  var refbook = JSON.parse(document.getElementById("refbook-data").textContent);
+  var selectedType = null;
+
+  var metaEl = document.getElementById("meta-info");
+  metaEl.textContent = "v" + refbook.meta.version + " -- " +
+    refbook.meta.source_files.length + " file(s)";
+
+  // --- Build sidebar with package groups ---
+
+  var listEl = document.getElementById("type-list");
+  var searchInput = document.getElementById("search-input");
+  var hexInput = document.getElementById("hex-input");
+
+  var packages = {};
+  var pkgOrder = [];
+  refbook.types.forEach(function(t, idx) {
+    var pkg = t.package || "(no package)";
+    if (!packages[pkg]) {
+      packages[pkg] = [];
+      pkgOrder.push(pkg);
+    }
+    packages[pkg].push({ type: t, index: idx });
+  });
+
+  pkgOrder.forEach(function(pkg) {
+    var group = document.createElement("div");
+    group.className = "pkg-group";
+
+    var header = document.createElement("div");
+    header.className = "pkg-header";
+
+    var headerName = document.createElement("span");
+    headerName.textContent = pkg;
+    header.appendChild(headerName);
+
+    var count = document.createElement("span");
+    count.className = "pkg-count";
+    count.textContent = packages[pkg].length;
+    header.appendChild(count);
+
+    header.addEventListener("click", function() {
+      group.classList.toggle("collapsed");
+    });
+    group.appendChild(header);
+
+    packages[pkg].forEach(function(entry) {
+      var t = entry.type;
+      var idx = entry.index;
+
+      var item = document.createElement("div");
+      item.className = "type-item";
+      item.dataset.index = idx;
+      item.dataset.name = t.name;
+      item.dataset.package = pkg;
+
+      var badge = document.createElement("span");
+      badge.className = "type-badge " + t.kind;
+      badge.textContent = t.kind === "struct" ? "S" : "E";
+
+      var name = document.createElement("span");
+      name.className = "type-name";
+      name.textContent = t.name;
+
+      var width = document.createElement("span");
+      width.className = "type-width";
+      width.textContent = t.total_width + "b";
+
+      item.appendChild(badge);
+      item.appendChild(name);
+      item.appendChild(width);
+      item.addEventListener("click", function() { selectType(idx); });
+      group.appendChild(item);
+    });
+
+    listEl.appendChild(group);
+  });
+
+  // --- Sidebar search ---
+
+  searchInput.addEventListener("input", function() {
+    filterTypes(searchInput.value);
+    activeNavIndex = -1;
+    clearKbdHighlight();
+  });
+
+  function filterTypes(query) {
+    query = query.trim().toLowerCase();
+    var isSearching = query.length > 0;
+
+    var groups = listEl.querySelectorAll(".pkg-group");
+    for (var g = 0; g < groups.length; g++) {
+      var group = groups[g];
+      var items = group.querySelectorAll(".type-item");
+      var anyVisible = false;
+
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        if (isSearching) {
+          var tName = (item.dataset.name || "").toLowerCase();
+          var tPkg = (item.dataset.package || "").toLowerCase();
+          var match = tName.indexOf(query) !== -1 || tPkg.indexOf(query) !== -1;
+          item.style.display = match ? "flex" : "none";
+          if (match) anyVisible = true;
+        } else {
+          item.style.display = "";
+          anyVisible = true;
+        }
+      }
+
+      group.style.display = (isSearching && !anyVisible) ? "none" : "";
+    }
+  }
+
+  // --- Keyboard navigation ---
+
+  var activeNavIndex = -1;
+
+  function getVisibleItems() {
+    var all = listEl.querySelectorAll(".type-item");
+    var visible = [];
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].offsetParent !== null && all[i].style.display !== "none") {
+        visible.push(all[i]);
+      }
+    }
+    return visible;
+  }
+
+  function clearKbdHighlight() {
+    var items = listEl.querySelectorAll(".kbd-highlight");
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.remove("kbd-highlight");
+    }
+  }
+
+  function highlightNavItem(visible, index) {
+    clearKbdHighlight();
+    if (index >= 0 && index < visible.length) {
+      visible[index].classList.add("kbd-highlight");
+      visible[index].scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "/" && document.activeElement !== searchInput && document.activeElement !== hexInput) {
+      e.preventDefault();
+      searchInput.focus();
+      return;
+    }
+
+    if (e.key === "Escape") {
+      if (searchInput.value) {
+        searchInput.value = "";
+        filterTypes("");
+      }
+      searchInput.blur();
+      activeNavIndex = -1;
+      clearKbdHighlight();
+      return;
+    }
+
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      var visible = getVisibleItems();
+      if (visible.length === 0) return;
+
+      if (e.key === "ArrowDown") {
+        activeNavIndex = Math.min(activeNavIndex + 1, visible.length - 1);
+      } else {
+        activeNavIndex = Math.max(activeNavIndex - 1, 0);
+      }
+
+      highlightNavItem(visible, activeNavIndex);
+      return;
+    }
+
+    if (e.key === "Enter" && activeNavIndex >= 0) {
+      var visible = getVisibleItems();
+      if (activeNavIndex < visible.length) {
+        var idx = parseInt(visible[activeNavIndex].dataset.index);
+        selectType(idx);
+        hexInput.focus();
+        activeNavIndex = -1;
+        clearKbdHighlight();
+      }
+      return;
+    }
+  });
+
+  // --- Hex input ---
+
+  hexInput.addEventListener("input", function() { decode(); });
+
+  // --- Select type ---
+
+  function selectType(idx) {
+    selectedType = refbook.types[idx];
+
+    var items = listEl.querySelectorAll(".type-item");
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle("active", parseInt(items[i].dataset.index) === idx);
+    }
+
+    document.getElementById("toolbar").style.display = "flex";
+    document.getElementById("type-title").textContent = selectedType.name;
+
+    var pkg = selectedType.package ? selectedType.package + "::" : "";
+    document.getElementById("type-info").textContent =
+      pkg + selectedType.name + " [" + selectedType.total_width + " bits]";
+
+    hexInput.value = "";
+    var maxHex = Math.ceil(selectedType.total_width / 4);
+    hexInput.placeholder = maxHex + " hex chars (" + selectedType.total_width + " bits)";
+    updateHexStatus("");
+    decode();
+  }
+
+  // --- URL hash routing ---
+
+  function updateHash() {
+    if (!selectedType) return;
+    var hash = "#type=" + encodeURIComponent(selectedType.name);
+    var hex = hexInput.value.replace(/[\s_]/g, "");
+    if (hex) hash += "&hex=" + hex;
+    history.replaceState(null, "", hash);
+  }
+
+  function loadFromHash() {
+    var hash = location.hash.slice(1);
+    if (!hash) return;
+
+    var params = {};
+    hash.split("&").forEach(function(part) {
+      var eq = part.indexOf("=");
+      if (eq > 0) {
+        params[part.slice(0, eq)] = decodeURIComponent(part.slice(eq + 1));
+      }
+    });
+
+    if (params.type) {
+      for (var i = 0; i < refbook.types.length; i++) {
+        if (refbook.types[i].name === params.type) {
+          selectType(i);
+          if (params.hex) {
+            hexInput.value = params.hex;
+            decode();
+          }
+          return;
+        }
+      }
+    }
+  }
+
+  // --- Hex status ---
+
+  function updateHexStatus(hexStr) {
+    var statusEl = document.getElementById("hex-status");
+    if (!selectedType || hexStr.length === 0) {
+      statusEl.textContent = "";
+      statusEl.className = "hex-status";
+      return;
+    }
+    var totalWidth = selectedType.total_width;
+    var expectedChars = Math.ceil(totalWidth / 4);
+    var label = hexStr.length + "/" + expectedChars;
+
+    if (hexStr.length > expectedChars) {
+      statusEl.textContent = label;
+      statusEl.className = "hex-status overflow";
+      statusEl.title = "Overflow: expected " + expectedChars + " hex chars (truncated)";
+    } else if (hexStr.length < expectedChars) {
+      statusEl.textContent = label;
+      statusEl.className = "hex-status padded";
+      statusEl.title = "Zero-padded: " + hexStr.length + " of " + expectedChars + " hex chars";
+    } else {
+      var maxVal = (1n << BigInt(totalWidth)) - 1n;
+      var inputVal = BigInt("0x" + hexStr);
+      if (inputVal > maxVal) {
+        statusEl.textContent = label;
+        statusEl.className = "hex-status overflow";
+        statusEl.title = "Value exceeds " + totalWidth + "-bit max";
+      } else {
+        statusEl.textContent = label;
+        statusEl.className = "hex-status exact";
+        statusEl.title = "Exact fit: " + totalWidth + " bits";
+      }
+    }
+  }
+
+  // --- Decode ---
+
+  function decode() {
+    var content = document.getElementById("content");
+    if (!selectedType) {
+      content.innerHTML = '<div class="placeholder">Select a type from the sidebar</div>';
+      return;
+    }
+
+    var hexStr = hexInput.value.replace(/[\s_]/g, "");
+    var bits = null;
+    var overflow = false;
+
+    if (hexStr.length > 0) {
+      if (!/^[0-9a-fA-F]+$/.test(hexStr)) {
+        content.innerHTML = '<div class="error-msg">Invalid hex characters</div>';
+        updateHexStatus("");
+        return;
+      }
+      var fullBits = hexToBin(hexStr);
+      var totalWidth = selectedType.total_width;
+      var expectedChars = Math.ceil(totalWidth / 4);
+      var maxVal = (1n << BigInt(totalWidth)) - 1n;
+      overflow = hexStr.length > expectedChars || BigInt("0x" + hexStr) > maxVal;
+      if (fullBits.length > totalWidth) {
+        fullBits = fullBits.slice(fullBits.length - totalWidth);
+      } else {
+        while (fullBits.length < totalWidth) fullBits = "0" + fullBits;
+      }
+      bits = fullBits;
+    }
+
+    updateHexStatus(hexStr);
+
+    var html = "";
+    if (bits && overflow) {
+      var maxHex = Math.ceil(selectedType.total_width / 4);
+      html += '<div class="error-msg" style="margin-bottom:12px;">Warning: input exceeds ' +
+        selectedType.total_width + ' bits (max ' + maxHex +
+        ' hex chars) -- upper bits truncated</div>';
+    }
+
+    if (selectedType.kind === "struct") {
+      html += renderBitfieldBar(selectedType.fields, selectedType.total_width, bits);
+      html += renderStructFields(selectedType.fields, bits, 0);
+    } else if (selectedType.kind === "enum") {
+      html += renderEnumMembers(selectedType.members, selectedType.total_width, bits);
+    }
+
+    content.innerHTML = html;
+    updateHash();
+  }
+
+  function hexToBin(hex) {
+    var bin = "";
+    for (var i = 0; i < hex.length; i++) {
+      bin += ("0000" + parseInt(hex[i], 16).toString(2)).slice(-4);
+    }
+    return bin;
+  }
+
+  function extractBits(bits, offset, width) {
+    if (!bits) return null;
+    var msb = bits.length - 1 - offset;
+    var start = msb - width + 1;
+    if (start < 0) start = 0;
+    return bits.slice(start, msb + 1);
+  }
+
+  function bitsToHex(b) {
+    if (!b || b.length === 0) return "";
+    var val = binToBigInt(b);
+    var hexLen = Math.ceil(b.length / 4);
+    return bigIntToHex(val, hexLen);
+  }
+
+  function findEnumName(members, bits) {
+    if (!members || !bits) return null;
+    var val = binToBigInt(bits);
+    for (var i = 0; i < members.length; i++) {
+      if (BigInt(members[i].value) === val) return members[i].name;
+    }
+    return null;
+  }
+
+  // --- Render: Bitfield bar ---
+
+  function renderBitfieldBar(fields, totalWidth, bits) {
+    if (!fields || fields.length === 0) return "";
+
+    if (totalWidth > 64) {
+      return renderCompactBitfield(fields, totalWidth, bits);
+    }
+
+    var html = '<table class="bitfield-table"><tr>';
+    for (var i = totalWidth - 1; i >= 0; i--) {
+      html += "<th>" + i + "</th>";
+    }
+    html += "</tr><tr>";
+
+    var bitMap = [];
+    for (var b = 0; b < totalWidth; b++) bitMap[b] = null;
+    for (var fi = 0; fi < fields.length; fi++) {
+      var f = fields[fi];
+      for (var bi = f.offset; bi < f.offset + f.width; bi++) {
+        bitMap[bi] = fi;
+      }
+    }
+
+    var col = totalWidth - 1;
+    while (col >= 0) {
+      var fi = bitMap[col];
+      if (fi === null) {
+        html += "<td>-</td>";
+        col--;
+      } else {
+        var f = fields[fi];
+        var span = f.width;
+        var color = FIELD_COLORS[fi % FIELD_COLORS.length];
+        var fieldBits = extractBits(bits, f.offset, f.width);
+        var label = f.name;
+        if (fieldBits) label += " " + bitsToHex(fieldBits);
+        html += '<td colspan="' + span + '" style="background:' + color + '22;color:' + color + '">' +
+          label + "</td>";
+        col = f.offset - 1;
+      }
+    }
+    html += "</tr></table>";
+    return html;
+  }
+
+  function renderCompactBitfield(fields, totalWidth, bits) {
+    var html = '<div style="display:flex;gap:2px;margin-bottom:24px;flex-wrap:wrap;">';
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      var color = FIELD_COLORS[i % FIELD_COLORS.length];
+      var pct = Math.max((f.width / totalWidth) * 100, 3);
+      var fieldBits = extractBits(bits, f.offset, f.width);
+      var label = f.name + " [" + (f.offset + f.width - 1) + ":" + f.offset + "]";
+      if (fieldBits) label += " = " + bitsToHex(fieldBits);
+      html += '<div style="background:' + color + '22;color:' + color +
+        ';padding:8px;border-radius:4px;font-size:12px;flex:' + pct + ' 0 0;' +
+        'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + label + '">' +
+        label + "</div>";
+    }
+    html += "</div>";
+    return html;
+  }
+
+  // --- Render: Struct fields ---
+
+  function renderStructFields(fields, bits, depth) {
+    if (!fields || fields.length === 0) return "";
+
+    var html = '<div class="fields-section">';
+    if (depth === 0) {
+      html += "<h3>Fields</h3>";
+      html += '<div class="field-row" style="font-weight:600;color:var(--text-dim);background:none;">' +
+        '<span>Name</span><span>Bits</span><span>Hex</span><span>Decoded</span></div>';
+    }
+
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      var fieldBits = extractBits(bits, f.offset, f.width);
+      var hexVal = fieldBits ? bitsToHex(fieldBits) : "-";
+      var decoded = "";
+
+      if (f.enum_members && fieldBits) {
+        var ename = findEnumName(f.enum_members, fieldBits);
+        if (ename) decoded = ename;
+        else decoded = "?";
+      } else if (fieldBits) {
+        var raw = binToBigInt(fieldBits);
+        if (f.field_type && f.field_type.signed && fieldBits[0] === "1") {
+          raw = raw - (1n << BigInt(f.width));
+        }
+        decoded = raw.toString();
+      }
+
+      var nestClass = depth > 0 ? " nested" : "";
+      var hexCopyable = fieldBits ? ' copyable" data-copy="' + escAttr(hexVal) : '';
+      var decodedCopyable = decoded ? ' copyable" data-copy="' + escAttr(decoded) : '';
+      html += '<div class="field-row' + nestClass + '">' +
+        '<span class="field-label">' + f.name +
+        (f.field_type ? ' <span style="color:var(--text-dim);font-weight:400;">(' + f.field_type.name + ')</span>' : '') +
+        "</span>" +
+        '<span class="field-bits">[' + (f.offset + f.width - 1) + ":" + f.offset + "]</span>" +
+        '<span class="field-hex' + hexCopyable + '">' + hexVal + "</span>" +
+        '<span class="field-decoded' + decodedCopyable + '">' + decoded + "</span>" +
+        "</div>";
+
+      if (f.inner_fields && f.inner_fields.length > 0) {
+        html += renderStructFields(f.inner_fields, bits, depth + 1);
+      }
+    }
+
+    html += "</div>";
+    return html;
+  }
+
+  // --- Render: Enum members ---
+
+  function renderEnumMembers(members, totalWidth, bits) {
+    if (!members || members.length === 0) return "";
+
+    var currentVal = null;
+    if (bits) currentVal = binToBigInt(bits);
+
+    var html = '<div class="enum-section"><h3>Members</h3>';
+    html += '<div class="enum-row" style="font-weight:600;color:var(--text-dim);background:none;">' +
+      "<span>Name</span><span>Dec</span><span>Hex</span></div>";
+
+    for (var i = 0; i < members.length; i++) {
+      var m = members[i];
+      var hexLen = Math.ceil(totalWidth / 4);
+      var mBig = BigInt(m.value);
+      var h = mBig.toString(16).toUpperCase();
+      while (h.length < hexLen) h = "0" + h;
+
+      var isMatch = currentVal !== null && mBig === currentVal;
+      var matchClass = isMatch ? " enum-match" : "";
+      var hexStr = "0x" + h;
+
+      html += '<div class="enum-row' + matchClass + '">' +
+        '<span class="enum-name copyable" data-copy="' + escAttr(m.name) + '">' + m.name + (isMatch ? " *" : "") + "</span>" +
+        '<span class="enum-value copyable" data-copy="' + m.value + '">' + m.value + "</span>" +
+        '<span class="enum-hex copyable" data-copy="' + escAttr(hexStr) + '">' + hexStr + "</span>" +
+        "</div>";
+    }
+
+    if (bits) {
+      var found = findEnumName(members, bits);
+      if (found) {
+        html += '<div style="margin-top:12px;font-size:14px;">Current value: <strong style="color:var(--accent2);">' +
+          found + "</strong> (" + binToBigInt(bits).toString() + ")</div>";
+      } else {
+        html += '<div style="margin-top:12px;font-size:14px;color:var(--warn);">Value ' +
+          binToBigInt(bits).toString() + " does not match any member</div>";
+      }
+    }
+
+    html += "</div>";
+    return html;
+  }
+
+  // --- Copy to clipboard ---
+
+  document.getElementById("content").addEventListener("click", function(e) {
+    var el = e.target.closest(".copyable");
+    if (!el || !el.dataset.copy) return;
+
+    navigator.clipboard.writeText(el.dataset.copy).then(function() {
+      el.classList.add("copied");
+      setTimeout(function() { el.classList.remove("copied"); }, 600);
+    });
+  });
+
+  // --- Init ---
+
+  loadFromHash();
+
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,542 @@
+# serializer version: 1
+# name: test_basic_types_snapshot
+  dict({
+    'meta': dict({
+      'generated_at': '2026-01-01T00:00:00+00:00',
+      'source_files': list([
+        'basic_types.sv',
+      ]),
+      'version': '0.3.0b1',
+    }),
+    'types': list([
+      dict({
+        'fields': None,
+        'kind': <TypeKind.ENUM: 'enum'>,
+        'members': list([
+          dict({
+            'name': 'IDLE',
+            'value': 0,
+          }),
+          dict({
+            'name': 'BUSY',
+            'value': 1,
+          }),
+          dict({
+            'name': 'ERR',
+            'value': 2,
+          }),
+        ]),
+        'name': 'state_e',
+        'package': 'test_pkg',
+        'total_width': 2,
+      }),
+      dict({
+        'fields': list([
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'header',
+            'offset': 8,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': list([
+              dict({
+                'name': 'IDLE',
+                'value': 0,
+              }),
+              dict({
+                'name': 'BUSY',
+                'value': 1,
+              }),
+              dict({
+                'name': 'ERR',
+                'value': 2,
+              }),
+            ]),
+            'field_type': dict({
+              'kind': <TypeKind.ENUM: 'enum'>,
+              'name': 'state_e',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'status',
+            'offset': 6,
+            'width': 2,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[5:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'payload',
+            'offset': 0,
+            'width': 6,
+          }),
+        ]),
+        'kind': <TypeKind.STRUCT: 'struct'>,
+        'members': None,
+        'name': 'packet_t',
+        'package': 'test_pkg',
+        'total_width': 16,
+      }),
+    ]),
+  })
+# ---
+# name: test_edge_cases_snapshot
+  dict({
+    'meta': dict({
+      'generated_at': '2026-01-01T00:00:00+00:00',
+      'source_files': list([
+        'edge_cases.sv',
+      ]),
+      'version': '0.3.0b1',
+    }),
+    'types': list([
+      dict({
+        'fields': None,
+        'kind': <TypeKind.ENUM: 'enum'>,
+        'members': list([
+          dict({
+            'name': 'ALPHA',
+            'value': 0,
+          }),
+          dict({
+            'name': 'BETA',
+            'value': 3,
+          }),
+          dict({
+            'name': 'GAMMA',
+            'value': 7,
+          }),
+          dict({
+            'name': 'DELTA',
+            'value': 15,
+          }),
+        ]),
+        'name': 'sparse_e',
+        'package': 'edge_pkg_a',
+        'total_width': 4,
+      }),
+      dict({
+        'fields': list([
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'data',
+            'offset': 4,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[3:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'tag',
+            'offset': 0,
+            'width': 4,
+          }),
+        ]),
+        'kind': <TypeKind.STRUCT: 'struct'>,
+        'members': None,
+        'name': 'param_t',
+        'package': 'edge_pkg_a',
+        'total_width': 12,
+      }),
+      dict({
+        'fields': list([
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'field_0',
+            'offset': 56,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'field_1',
+            'offset': 48,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'field_2',
+            'offset': 40,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'field_3',
+            'offset': 32,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'field_4',
+            'offset': 24,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'field_5',
+            'offset': 16,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'field_6',
+            'offset': 8,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'field_7',
+            'offset': 0,
+            'width': 8,
+          }),
+        ]),
+        'kind': <TypeKind.STRUCT: 'struct'>,
+        'members': None,
+        'name': 'wide_t',
+        'package': 'edge_pkg_b',
+        'total_width': 64,
+      }),
+    ]),
+  })
+# ---
+# name: test_large_struct
+  dict({
+    'fields': list([
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'field_0',
+        'offset': 56,
+        'width': 8,
+      }),
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'field_1',
+        'offset': 48,
+        'width': 8,
+      }),
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'field_2',
+        'offset': 40,
+        'width': 8,
+      }),
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'field_3',
+        'offset': 32,
+        'width': 8,
+      }),
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'field_4',
+        'offset': 24,
+        'width': 8,
+      }),
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'field_5',
+        'offset': 16,
+        'width': 8,
+      }),
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'field_6',
+        'offset': 8,
+        'width': 8,
+      }),
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'field_7',
+        'offset': 0,
+        'width': 8,
+      }),
+    ]),
+    'kind': <TypeKind.STRUCT: 'struct'>,
+    'members': None,
+    'name': 'wide_t',
+    'package': 'edge_pkg_b',
+    'total_width': 64,
+  })
+# ---
+# name: test_nested_snapshot
+  dict({
+    'meta': dict({
+      'generated_at': '2026-01-01T00:00:00+00:00',
+      'source_files': list([
+        'nested.sv',
+      ]),
+      'version': '0.3.0b1',
+    }),
+    'types': list([
+      dict({
+        'fields': list([
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'a',
+            'offset': 8,
+            'width': 8,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[7:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'b',
+            'offset': 0,
+            'width': 8,
+          }),
+        ]),
+        'kind': <TypeKind.STRUCT: 'struct'>,
+        'members': None,
+        'name': 'inner_t',
+        'package': 'test_pkg',
+        'total_width': 16,
+      }),
+      dict({
+        'fields': list([
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': <TypeKind.STRUCT: 'struct'>,
+              'name': 'inner_t',
+              'signed': False,
+            }),
+            'inner_fields': list([
+              dict({
+                'enum_members': None,
+                'field_type': dict({
+                  'kind': None,
+                  'name': 'logic[7:0]',
+                  'signed': False,
+                }),
+                'inner_fields': None,
+                'name': 'a',
+                'offset': 8,
+                'width': 8,
+              }),
+              dict({
+                'enum_members': None,
+                'field_type': dict({
+                  'kind': None,
+                  'name': 'logic[7:0]',
+                  'signed': False,
+                }),
+                'inner_fields': None,
+                'name': 'b',
+                'offset': 0,
+                'width': 8,
+              }),
+            ]),
+            'name': 'data',
+            'offset': 16,
+            'width': 16,
+          }),
+          dict({
+            'enum_members': None,
+            'field_type': dict({
+              'kind': None,
+              'name': 'logic[15:0]',
+              'signed': False,
+            }),
+            'inner_fields': None,
+            'name': 'extra',
+            'offset': 0,
+            'width': 16,
+          }),
+        ]),
+        'kind': <TypeKind.STRUCT: 'struct'>,
+        'members': None,
+        'name': 'outer_t',
+        'package': 'test_pkg',
+        'total_width': 32,
+      }),
+    ]),
+  })
+# ---
+# name: test_non_sequential_enum
+  dict({
+    'fields': None,
+    'kind': <TypeKind.ENUM: 'enum'>,
+    'members': list([
+      dict({
+        'name': 'ALPHA',
+        'value': 0,
+      }),
+      dict({
+        'name': 'BETA',
+        'value': 3,
+      }),
+      dict({
+        'name': 'GAMMA',
+        'value': 7,
+      }),
+      dict({
+        'name': 'DELTA',
+        'value': 15,
+      }),
+    ]),
+    'name': 'sparse_e',
+    'package': 'edge_pkg_a',
+    'total_width': 4,
+  })
+# ---
+# name: test_parameterized_struct
+  dict({
+    'fields': list([
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[7:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'data',
+        'offset': 4,
+        'width': 8,
+      }),
+      dict({
+        'enum_members': None,
+        'field_type': dict({
+          'kind': None,
+          'name': 'logic[3:0]',
+          'signed': False,
+        }),
+        'inner_fields': None,
+        'name': 'tag',
+        'offset': 0,
+        'width': 4,
+      }),
+    ]),
+    'kind': <TypeKind.STRUCT: 'struct'>,
+    'members': None,
+    'name': 'param_t',
+    'package': 'edge_pkg_a',
+    'total_width': 12,
+  })
+# ---
