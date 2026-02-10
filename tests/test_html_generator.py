@@ -22,10 +22,14 @@ def test_html_contains_json(basic_types_refbook: Refbook) -> None:
 
 def test_html_self_contained(basic_types_refbook: Refbook) -> None:
     html = generate_html(basic_types_refbook)
-    # No external CSS/JS dependencies
-    assert "href=" not in html or 'href="http' not in html
-    assert '<link rel="stylesheet"' not in html
+    # No external JS dependencies (Google Fonts link is allowed)
     assert '<script src=' not in html
+    # External CSS limited to Google Fonts only
+    link_matches = re.findall(r'<link[^>]+href="([^"]+)"', html)
+    for href in link_matches:
+        assert "fonts.googleapis.com" in href or "fonts.gstatic.com" in href, (
+            f"Unexpected external link: {href}"
+        )
 
 
 def test_html_bigint_helpers(basic_types_refbook: Refbook) -> None:
@@ -74,3 +78,15 @@ def test_html_url_hash(basic_types_refbook: Refbook) -> None:
     assert "loadFromHash" in html
     assert "updateHash" in html
     assert "replaceState" in html
+
+
+def test_html_register_map(basic_types_refbook: Refbook) -> None:
+    html = generate_html(basic_types_refbook)
+    assert "register-map" in html
+    assert "reg-field" in html
+    assert "renderRegisterMap" in html
+
+
+def test_html_esc_html(basic_types_refbook: Refbook) -> None:
+    html = generate_html(basic_types_refbook)
+    assert "escHtml" in html

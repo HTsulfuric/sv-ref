@@ -8,5 +8,9 @@ build/
 .pytest_cache/
 .ruff_cache/
 .claude/
+.pypirc
 demo_output/
 CLAUDE.md
+refbook.json
+index.html
+docs/

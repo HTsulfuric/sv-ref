@@ -9,7 +9,7 @@ and enum values.
 
 ## Installation
 
-Requires Python 3.11+.
+Requires Python 3.10+.
 
 ```bash
 # Clone and install
@@ -29,10 +29,9 @@ sv-ref generate <files...> [options]
 | Option | Description |
 |---|---|
 | `files` | One or more SystemVerilog source files (supports glob patterns) |
-| `-I`, `--include-dir` | Include directories (auto-discovers `*.sv` files) |
+| `-I`, `--include-dir` | Include search paths for `` `include `` directives |
 | `-o`, `--output-dir` | Output directory (default: `.`) |
 | `-f`, `--filelist` | Filelist (`.f`) files to parse (repeatable) |
-| `-r`, `--recursive` | Recursively scan include directories |
 | `--json-only` | Only generate JSON output (skip HTML) |
 | `--html-only` | Only generate HTML output (skip JSON) |
 | `--version` | Show version and exit |
@@ -60,14 +59,15 @@ payload              [5:0]        0x0D         13
 
 ### Filelist Support
 
-Use `.f` files to specify source files and include directories:
+Use `.f` files to specify source files and include directories.
+Relative paths are resolved from the current working directory (standard EDA convention).
 
 ```
 # sources.f
 rtl/types.sv
 rtl/pkg.sv
 
-# Include directories
+# Include search paths (for `include directives)
 +incdir+rtl/includes
 +incdir+lib/common
 ```
@@ -109,7 +109,7 @@ The generated `refbook.json` contains all parsed types with field-level detail:
 ```json
 {
   "meta": {
-    "version": "0.3.0b1",
+    "version": "0.1.4",
     "generated_at": "2026-02-07T00:00:00+00:00",
     "source_files": ["types.sv"]
   },
@@ -180,9 +180,11 @@ Open it in any browser to:
 - Signed/unsigned fields
 - Parameterized types (resolved at elaboration)
 - Multiple packages per file
+- Module-scoped types (typedefs inside `module` blocks)
 - Wide types (>53 bits) via BigInt
 
-Types must be defined inside a `package` block.
+Types can be defined inside `package` or `module` blocks. Module-scoped types
+use the module definition name as their package/group name in the output.
 
 ## Development
 

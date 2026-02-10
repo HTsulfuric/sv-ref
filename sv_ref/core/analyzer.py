@@ -20,19 +20,39 @@ from sv_ref.core.models import (
 logger = logging.getLogger(__name__)
 
 
-def analyze(source_files: list[Path]) -> Refbook:
-    comp = pyslang.Compilation()
+def analyze(
+    source_files: list[Path],
+    include_dirs: list[Path] | None = None,
+) -> Refbook:
+    inc_dirs = include_dirs or []
+    bag = _make_options_bag(inc_dirs)
+    sm = pyslang.SourceManager()
+    comp = pyslang.Compilation(options=bag)
     for path in source_files:
-        tree = pyslang.SyntaxTree.fromFile(str(path))
+        if inc_dirs:
+            tree = pyslang.SyntaxTree.fromFile(str(path), sm, bag)
+        else:
+            tree = pyslang.SyntaxTree.fromFile(str(path))
         comp.addSyntaxTree(tree)
 
     root = comp.getRoot()
     types: list[SVType] = []
+    seen: set[tuple[str, str]] = set()
 
     for cu in root:
+        if cu.kind != pyslang.SymbolKind.CompilationUnit:
+            continue
         for sym in cu:
             if sym.kind == pyslang.SymbolKind.Package:
-                types.extend(_extract_package_types(sym, sym.name))
+                for sv_type in _extract_package_types(sym, sym.name):
+                    key = (sv_type.package or "", sv_type.name)
+                    if key not in seen:
+                        seen.add(key)
+                        types.append(sv_type)
+
+    for sym in root:
+        if sym.kind == pyslang.SymbolKind.Instance:
+            _collect_instance_types(sym, types, seen)
 
     meta = RefbookMeta(
         version=__version__,
@@ -40,6 +60,23 @@ def analyze(source_files: list[Path]) -> Refbook:
         source_files=[str(f) for f in source_files],
     )
     return Refbook(meta=meta, types=types)
+
+
+def _collect_instance_types(
+    inst,
+    types: list[SVType],
+    seen: set[tuple[str, str]],
+) -> None:
+    body = inst.body
+    module_name = body.name
+    for sv_type in _extract_package_types(body, module_name):
+        key = (sv_type.package or "", sv_type.name)
+        if key not in seen:
+            seen.add(key)
+            types.append(sv_type)
+    for child in body:
+        if child.kind == pyslang.SymbolKind.Instance:
+            _collect_instance_types(child, types, seen)
 
 
 def _extract_package_types(pkg_sym, pkg_name: str) -> list[SVType]:
@@ -141,3 +178,10 @@ def _determine_type_kind(type_obj) -> TypeKind | None:
     if type_obj.isEnum:
         return TypeKind.ENUM
     return None
+
+
+def _make_options_bag(include_dirs: list[Path]) -> pyslang.Bag:
+    prep_opts = pyslang.PreprocessorOptions()
+    if include_dirs:
+        prep_opts.additionalIncludePaths = include_dirs
+    return pyslang.Bag([prep_opts])

@@ -56,3 +56,8 @@ def test_multiple_packages_in_one_file():
     packages = {t.package for t in refbook.types}
     assert "edge_pkg_a" in packages
     assert "edge_pkg_b" in packages
+
+
+def test_module_types_snapshot(snapshot: SnapshotAssertion):
+    refbook = analyze([SAMPLES_DIR / "module_types.sv"])
+    assert _snapshot_dict(refbook) == snapshot

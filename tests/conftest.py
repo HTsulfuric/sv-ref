@@ -28,3 +28,8 @@ def signed_refbook() -> Refbook:
 @pytest.fixture
 def wide_types_refbook() -> Refbook:
     return analyze([SAMPLES_DIR / "wide_types.sv"])
+
+
+@pytest.fixture
+def module_types_refbook() -> Refbook:
+    return analyze([SAMPLES_DIR / "module_types.sv"])

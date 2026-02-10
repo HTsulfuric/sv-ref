@@ -115,47 +115,42 @@ def test_generate_mutually_exclusive_flags(tmp_path: Path):
     assert "mutually exclusive" in result.output.lower()
 
 
-def test_generate_recursive_include(tmp_path: Path):
-    sub = tmp_path / "inc" / "sub"
-    sub.mkdir(parents=True)
+def test_generate_include_dir_resolves_includes(tmp_path: Path):
+    inc = tmp_path / "inc"
+    inc.mkdir()
 
-    sv_content = """\
-package rec_pkg;
+    header_sv = """\
+typedef enum logic [1:0] {
+    ST_IDLE = 2'b00,
+    ST_RUN  = 2'b01
+} common_state_e;
+"""
+    (inc / "common_defs.svh").write_text(header_sv)
+
+    main_sv = """\
+`include "common_defs.svh"
+package inc_pkg;
     typedef struct packed {
-        logic [7:0] data;
-    } rec_t;
+        common_state_e state;
+        logic [5:0]    data;
+    } inc_frame_t;
 endpackage
 """
-    (sub / "rec.sv").write_text(sv_content)
+    main_file = tmp_path / "main.sv"
+    main_file.write_text(main_sv)
 
     out = tmp_path / "out"
     result = runner.invoke(app, [
         "generate",
-        "-I", str(tmp_path / "inc"),
-        "-r",
-        "--json-only",
-        "-o", str(out),
-        # provide a dummy source so files is not None -- actually we need
-        # at least a filelist or file. Use filelist approach instead:
-    ])
-    # Without files or filelist, this should fail
-    assert result.exit_code != 0
-
-    # Now use filelist to provide the file
-    flist = tmp_path / "sources.f"
-    flist.write_text("")  # empty -- no sources from filelist
-    result = runner.invoke(app, [
-        "generate",
-        "-f", str(flist),
-        "-I", str(tmp_path / "inc"),
-        "-r",
+        str(main_file),
+        "-I", str(inc),
         "--json-only",
         "-o", str(out),
     ])
     assert result.exit_code == 0
     data = json.loads((out / "refbook.json").read_text())
     names = {t["name"] for t in data["types"]}
-    assert "rec_t" in names
+    assert "inc_frame_t" in names
 
 
 def test_filelist_cli_integration(tmp_path: Path):

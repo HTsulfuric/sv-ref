@@ -103,15 +103,11 @@ def generate(
             typer.echo(f"Error: include directory not found: {d}", err=True)
             raise typer.Exit(code=1)
 
-    for d in all_incdirs:
-        pattern = "**/*.sv" if recursive else "*.sv"
-        all_files.extend(sorted(d.glob(pattern)))
-
     if not all_files:
         typer.echo("Error: no SystemVerilog files to process", err=True)
         raise typer.Exit(code=1)
 
-    refbook = analyze(all_files)
+    refbook = analyze(all_files, all_incdirs if all_incdirs else None)
 
     output_dir.mkdir(parents=True, exist_ok=True)
 

@@ -111,3 +111,63 @@ def test_refbook_meta(basic_types_refbook: Refbook):
     assert len(basic_types_refbook.meta.source_files) == 1
     assert "basic_types.sv" in basic_types_refbook.meta.source_files[0]
     assert basic_types_refbook.meta.generated_at != ""
+
+
+def test_analyze_module_scoped_enum(module_types_refbook: Refbook):
+    merge_state = next(
+        t for t in module_types_refbook.types if t.name == "merge_state_t"
+    )
+    assert merge_state.kind == TypeKind.ENUM
+    assert merge_state.total_width == 2
+    assert merge_state.package == "merge_phase_t1"
+    assert merge_state.members is not None
+    assert len(merge_state.members) == 4
+    assert merge_state.members[0].name == "IDLE"
+    assert merge_state.members[0].value == 0
+    assert merge_state.members[3].name == "DONE"
+    assert merge_state.members[3].value == 3
+
+
+def test_analyze_module_scoped_struct(module_types_refbook: Refbook):
+    merge_data = next(
+        t for t in module_types_refbook.types if t.name == "merge_query_data_t"
+    )
+    assert merge_data.kind == TypeKind.STRUCT
+    assert merge_data.total_width == 26
+    assert merge_data.package == "merge_phase_t1"
+    assert merge_data.fields is not None
+    assert len(merge_data.fields) == 3
+
+    addr = merge_data.fields[0]
+    assert addr.name == "addr"
+    assert addr.width == 8
+    assert addr.offset == 18
+
+    data = merge_data.fields[1]
+    assert data.name == "data"
+    assert data.width == 16
+    assert data.offset == 2
+
+    state = merge_data.fields[2]
+    assert state.name == "state"
+    assert state.width == 2
+    assert state.offset == 0
+    assert state.field_type.name == "merge_state_t"
+    assert state.field_type.kind == TypeKind.ENUM
+    assert state.enum_members is not None
+    assert len(state.enum_members) == 4
+
+
+def test_analyze_module_and_package_together():
+    refbook = analyze([
+        SAMPLES_DIR / "basic_types.sv",
+        SAMPLES_DIR / "module_types.sv",
+    ])
+    names = {t.name for t in refbook.types}
+    assert "state_e" in names
+    assert "packet_t" in names
+    assert "merge_state_t" in names
+    assert "merge_query_data_t" in names
+    packages = {t.package for t in refbook.types}
+    assert "test_pkg" in packages
+    assert "merge_phase_t1" in packages

@@ -1,16 +1,17 @@
 [project]
 name = "sv-ref"
-version = "0.3.0b1"
+version = "0.1.5"
 description = "SystemVerilog packed struct/enum type definitions to JSON/HTML refbook generator"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 keywords = ["systemverilog", "waveform", "debugging", "struct", "enum", "pyslang"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -32,6 +33,9 @@ sv-ref = "sv_ref.main:app"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = ["sv_ref/", "LICENSE", "README.md", "pyproject.toml"]
 
 [dependency-groups]
 dev = [
